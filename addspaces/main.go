@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,8 +12,8 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "Usage: addspaces <model file> <phrase>")
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "Usage: addspaces <model file>")
 		os.Exit(1)
 	}
 	modelData, err := ioutil.ReadFile(os.Args[1])
@@ -30,6 +31,33 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Unexpected deserialized type: %T\n", model)
 		os.Exit(1)
 	}
-	fields := fielder.Fields(os.Args[2])
-	fmt.Println(strings.Join(fields, " "))
+	for str := range inputStream() {
+		fields := fielder.Fields(str)
+		fmt.Println(strings.Join(fields, " "))
+	}
+}
+
+func inputStream() <-chan string {
+	res := make(chan string)
+	go func() {
+		var buf [1]byte
+		var stringBuf bytes.Buffer
+		for {
+			if n, err := os.Stdin.Read(buf[:]); err != nil {
+				if stringBuf.Len() > 0 {
+					res <- stringBuf.String()
+				}
+				close(res)
+				return
+			} else if n > 0 {
+				if buf[0] == '\n' {
+					res <- stringBuf.String()
+					stringBuf.Reset()
+				} else {
+					stringBuf.WriteByte(buf[0])
+				}
+			}
+		}
+	}()
+	return res
 }
