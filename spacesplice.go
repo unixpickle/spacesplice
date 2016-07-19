@@ -34,4 +34,7 @@ var Trainers = map[string]TrainFunc{
 	"markov": func(corpusDir string) (Fielder, error) {
 		return TrainMarkov(corpusDir)
 	},
+	"dict": func(corpusDir string) (Fielder, error) {
+		return TrainDictionary(corpusDir)
+	},
 }

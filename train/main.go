@@ -48,5 +48,5 @@ func printModels() {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	fmt.Fprintln(os.Stderr, "Available models:", strings.Join(names, ","))
+	fmt.Fprintln(os.Stderr, "Available models:", strings.Join(names, ", "))
 }
