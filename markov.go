@@ -66,10 +66,12 @@ func DeserializeMarkov(d []byte) (*Markov, error) {
 func (m *Markov) MostLikely(previous string, options []string) string {
 	var bestCount, bestIdx int
 	for i, option := range options {
-		count := m.Table[previous][option]
-		if count > bestCount {
-			bestCount = count
-			bestIdx = i
+		if nextMap := m.Table[previous]; nextMap != nil {
+			count := m.Table[previous][option]
+			if count > bestCount {
+				bestCount = count
+				bestIdx = i
+			}
 		}
 	}
 	if bestCount > 0 {
@@ -121,10 +123,15 @@ func (m *Markov) Serialize() ([]byte, error) {
 func trainMarkovSample(m *Markov, sampleFields []string) {
 	for i, field := range sampleFields {
 		m.RawCounts[field]++
+		var lastWord string
 		if i > 0 {
-			m.Table[sampleFields[i-1]][field]++
-		} else {
-			m.Table[""][field]++
+			lastWord = sampleFields[i-1]
 		}
+		subTable := m.Table[lastWord]
+		if subTable == nil {
+			subTable = map[string]int{}
+			m.Table[lastWord] = subTable
+		}
+		subTable[field]++
 	}
 }
