@@ -96,7 +96,7 @@ func (m *Markov) Fields(text string) []string {
 	for _, part := range parts {
 		var lastWord string
 		for i := 0; i < len(part); i += len(lastWord) {
-			followingWords := make([]string, maxWordLen-1)
+			followingWords := make([]string, maxWordLen)
 			for l := 1; l <= maxWordLen && l+i <= len(part); l++ {
 				followingWords[l-1] = part[i : i+l]
 			}
