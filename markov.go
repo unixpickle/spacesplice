@@ -3,6 +3,7 @@ package spacesplice
 import (
 	"encoding/json"
 	"io/ioutil"
+	"math"
 	"path/filepath"
 	"strings"
 )
@@ -128,12 +129,25 @@ func (m *Markov) BestField(previous string, str string) string {
 	}
 
 	followingWords(str, func(w1 string) {
-		p := m.Prob(w1)
-		if p >= bestUncond {
-			bestUncond = p
+		condProb := m.CondProb(previous, w1)
+		if condProb > bestCond {
+			bestCond = condProb
+			bestCondStr = w1
+		}
+	})
+
+	if bestCond > 0 {
+		return bestCondStr
+	}
+
+	followingPairs(str, func(w1, w2 string) {
+		uncondProb := math.Max(m.Prob(w1), m.Prob(w2))
+		if uncondProb >= bestUncond {
+			bestUncond = uncondProb
 			bestUncondStr = w1
 		}
 	})
+
 	return bestUncondStr
 }
 
