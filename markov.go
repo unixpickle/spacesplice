@@ -152,7 +152,7 @@ func (m *Markov) BestField(previous string, str string) string {
 }
 
 // Fields uses the Markov model to split the spaceless
-// text into fields (i.e. words)
+// text into fields (i.e. words).
 func (m *Markov) Fields(text string) []string {
 	parts := strings.Fields(text)
 	var res []string
