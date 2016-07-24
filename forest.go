@@ -3,8 +3,8 @@ package spacesplice
 import (
 	"bytes"
 	"encoding/gob"
-	"errors"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 	"strings"
 
@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	forestSize         = 100
-	forestFeatureCount = 10
-	forestSampleCount  = 1000
+	forestSize         = 500
+	forestFeatureCount = 6
+	forestSampleCount  = 7000
+	forestFracCutoff   = 0.22
 )
 
 func init() {
@@ -34,6 +35,8 @@ func TrainForest(corpusDir string) (*Forest, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("Building samples...")
 
 	var samples []idtrees.Sample
 	for _, fileInfo := range contents {
@@ -68,8 +71,10 @@ func TrainForest(corpusDir string) (*Forest, error) {
 		}
 	}
 
+	log.Println("Creating forest...")
+
 	var allAttrs []idtrees.Attr
-	for i := -20; i <= 20; i++ {
+	for i := -7; i <= 3; i++ {
 		allAttrs = append(allAttrs, i)
 	}
 	forest := idtrees.BuildForest(forestSize, samples, allAttrs, forestSampleCount,
@@ -82,16 +87,38 @@ func TrainForest(corpusDir string) (*Forest, error) {
 // DeserializeForest deserializes a Forest which
 // was serialized with Forest.Serialize().
 func DeserializeForest(d []byte) (*Forest, error) {
-	// TODO: this.
-	return nil, errors.New("not yet implemented")
+	buf := bytes.NewBuffer(d)
+	dec := gob.NewDecoder(buf)
+	var res idtrees.Forest
+	if err := dec.Decode(&res); err != nil {
+		return nil, err
+	}
+	return &Forest{forest: res}, nil
 }
 
 // Fields uses the forest to split the spaceless text
 // into fields (i.e. words).
 func (f *Forest) Fields(text string) []string {
-	// parts := strings.Fields(text)
+	parts := strings.Fields(text)
 	var res []string
-	// TODO: this.
+	for _, part := range parts {
+		var field bytes.Buffer
+		for i := 0; i < len(part); i++ {
+			sample := &forestSample{
+				textDoc: part,
+				index:   i,
+			}
+			field.WriteByte(part[i])
+			probs := f.forest.Classify(sample)
+			if probs[true] >= probs[false]*forestFracCutoff {
+				res = append(res, field.String())
+				field.Reset()
+			}
+		}
+		if field.Len() > 0 {
+			res = append(res, field.String())
+		}
+	}
 	return res
 }
 
