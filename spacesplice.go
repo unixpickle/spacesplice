@@ -40,4 +40,7 @@ var Trainers = map[string]TrainFunc{
 	"forest": func(corpusDir string) (Fielder, error) {
 		return TrainForest(corpusDir)
 	},
+	"rnn": func(corpusDir string) (Fielder, error) {
+		return TrainRNN(corpusDir)
+	},
 }
