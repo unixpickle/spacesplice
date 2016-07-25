@@ -18,10 +18,6 @@ const (
 	forestFracCutoff   = 0.22
 )
 
-func init() {
-	gob.Register(&forestSample{})
-}
-
 // Forest is a Splicer that uses a random forest to
 // insert spaces into a piece of text.
 type Forest struct {
