@@ -23,7 +23,7 @@ const (
 	rnnOutputHidden    = 128
 	rnnStepSize        = 0.001
 	rnnBatchSize       = 20
-	rnnMaxSamples      = 4096
+	rnnMaxSamples      = 1 << 13
 )
 
 // RNN splits a string into fields using a bidirectional
