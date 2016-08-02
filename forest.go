@@ -25,7 +25,7 @@ type Forest struct {
 }
 
 // TrainForest trains a forest on a directory full
-// sample text files.
+// of sample text files.
 func TrainForest(corpusDir string) (*Forest, error) {
 	contents, err := ioutil.ReadDir(corpusDir)
 	if err != nil {
@@ -125,7 +125,7 @@ func (f *Forest) SerializerType() string {
 	return serializerTypeForest
 }
 
-// Serialize serializes the Markov model.
+// Serialize serializes the random forest.
 func (f *Forest) Serialize() ([]byte, error) {
 	var res bytes.Buffer
 	enc := gob.NewEncoder(&res)
