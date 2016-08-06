@@ -3,11 +3,9 @@ package spacesplice
 import (
 	"bytes"
 	"encoding/gob"
-	"io/ioutil"
 	"log"
 	"math"
 	"math/rand"
-	"path/filepath"
 	"strings"
 
 	"github.com/unixpickle/num-analysis/linalg"
@@ -32,23 +30,10 @@ type BoostStumps struct {
 // TrainBoostStumps trains a boosted classifier on a
 // directory full of sample text files.
 func TrainBoostStumps(corpusDir string) (*BoostStumps, error) {
-	contents, err := ioutil.ReadDir(corpusDir)
-	if err != nil {
-		return nil, err
-	}
-
 	log.Println("Building samples...")
 
 	var samples boostSampleList
-	for _, fileInfo := range contents {
-		if strings.HasPrefix(fileInfo.Name(), ".") {
-			continue
-		}
-		path := filepath.Join(corpusDir, fileInfo.Name())
-		sampleBody, err := ioutil.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
+	ReadSamples(corpusDir, func(sampleBody []byte) {
 		fields := strings.Fields(string(sampleBody))
 		boundaries := map[int]bool{}
 		var joined bytes.Buffer
@@ -69,7 +54,7 @@ func TrainBoostStumps(corpusDir string) (*BoostStumps, error) {
 				space:    boundaries[i],
 			})
 		}
-	}
+	})
 
 	if len(samples) > boostMaxSamples {
 		for i := 0; i < boostMaxSamples; i++ {

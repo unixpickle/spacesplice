@@ -2,10 +2,8 @@ package spacesplice
 
 import (
 	"bytes"
-	"io/ioutil"
 	"log"
 	"math/rand"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -136,25 +134,16 @@ func createRNN() *rnn.Bidirectional {
 }
 
 func createRNNSamples(corpusDir string) (sgd.SampleSet, error) {
-	contents, err := ioutil.ReadDir(corpusDir)
-	if err != nil {
-		return nil, err
-	}
 	var res rnnSampleSet
-	for _, fileInfo := range contents {
-		if strings.HasPrefix(fileInfo.Name(), ".") {
-			continue
-		}
-		path := filepath.Join(corpusDir, fileInfo.Name())
-		sampleBody, err := ioutil.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
+	err := ReadSamples(corpusDir, func(sampleBody []byte) {
 		data, bounds := rnnBoundedSample(string(sampleBody))
 		for i := 0; i+rnnTrainingSeqSize <= len(data); i += rnnTrainingSeqSize {
 			res.samples = append(res.samples, data[i:i+rnnTrainingSeqSize])
 			res.endFlags = append(res.endFlags, bounds[i:i+rnnTrainingSeqSize])
 		}
+	})
+	if err != nil {
+		return nil, err
 	}
 	return &res, nil
 }

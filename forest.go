@@ -3,9 +3,7 @@ package spacesplice
 import (
 	"bytes"
 	"encoding/gob"
-	"io/ioutil"
 	"log"
-	"path/filepath"
 	"strings"
 
 	"github.com/unixpickle/weakai/idtrees"
@@ -27,23 +25,10 @@ type Forest struct {
 // TrainForest trains a forest on a directory full
 // of sample text files.
 func TrainForest(corpusDir string) (*Forest, error) {
-	contents, err := ioutil.ReadDir(corpusDir)
-	if err != nil {
-		return nil, err
-	}
-
 	log.Println("Building samples...")
 
 	var samples []idtrees.Sample
-	for _, fileInfo := range contents {
-		if strings.HasPrefix(fileInfo.Name(), ".") {
-			continue
-		}
-		path := filepath.Join(corpusDir, fileInfo.Name())
-		sampleBody, err := ioutil.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
+	err := ReadSamples(corpusDir, func(sampleBody []byte) {
 		fields := strings.Fields(string(sampleBody))
 		boundaries := map[int]bool{}
 		var joined bytes.Buffer
@@ -65,6 +50,9 @@ func TrainForest(corpusDir string) (*Forest, error) {
 				endOfField: boundaries[i],
 			})
 		}
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	log.Println("Creating forest...")

@@ -1,8 +1,6 @@
 package spacesplice
 
 import (
-	"io/ioutil"
-	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -20,23 +18,14 @@ type Dictionary struct {
 // of the files in the given directory and extracting
 // their words.
 func TrainDictionary(corpusDir string) (*Dictionary, error) {
-	contents, err := ioutil.ReadDir(corpusDir)
-	if err != nil {
-		return nil, err
-	}
 	wordMap := map[string]bool{}
-	for _, fileInfo := range contents {
-		if strings.HasPrefix(fileInfo.Name(), ".") {
-			continue
-		}
-		path := filepath.Join(corpusDir, fileInfo.Name())
-		sampleBody, err := ioutil.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
+	err := ReadSamples(corpusDir, func(sampleBody []byte) {
 		for _, field := range strings.Fields(string(sampleBody)) {
 			wordMap[field] = true
 		}
+	})
+	if err != nil {
+		return nil, err
 	}
 	words := make([]string, 0, len(wordMap))
 	for word := range wordMap {

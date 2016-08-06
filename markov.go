@@ -2,9 +2,7 @@ package spacesplice
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"math"
-	"path/filepath"
 	"strings"
 )
 
@@ -44,21 +42,12 @@ func TrainMarkov(corpusDir string) (*Markov, error) {
 		Table:       map[string]map[string]int{},
 		TableCounts: map[string]int{},
 	}
-	contents, err := ioutil.ReadDir(corpusDir)
-	if err != nil {
-		return nil, err
-	}
-	for _, fileInfo := range contents {
-		if strings.HasPrefix(fileInfo.Name(), ".") {
-			continue
-		}
-		path := filepath.Join(corpusDir, fileInfo.Name())
-		sampleBody, err := ioutil.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
+	err := ReadSamples(corpusDir, func(sampleBody []byte) {
 		fields := strings.Fields(string(sampleBody))
 		trainMarkovSample(res, fields)
+	})
+	if err != nil {
+		return nil, err
 	}
 	return res, nil
 }
