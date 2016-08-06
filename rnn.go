@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	rnnTrainingSeqSize = 128
+	rnnSampleMinFields = 1
+	rnnSampleMaxFields = 20
 	rnnFeatureCount    = 256
 	rnnStateSize       = 128
 	rnnOutputHidden    = 128
@@ -134,10 +135,18 @@ func createRNN() *rnn.Bidirectional {
 func createRNNSamples(corpusDir string) (sgd.SampleSet, error) {
 	var res rnnSampleSet
 	err := ReadSamples(corpusDir, func(sampleBody []byte) {
-		data, bounds := rnnBoundedSample(string(sampleBody))
-		for i := 0; i+rnnTrainingSeqSize <= len(data); i += rnnTrainingSeqSize {
-			res.samples = append(res.samples, data[i:i+rnnTrainingSeqSize])
-			res.endFlags = append(res.endFlags, bounds[i:i+rnnTrainingSeqSize])
+		fields := strings.Fields(string(sampleBody))
+		for len(fields) > 0 {
+			fieldCount := rand.Intn(1+rnnSampleMaxFields-rnnSampleMinFields) +
+				rnnSampleMinFields
+			if fieldCount > len(fields) {
+				fieldCount = len(fields)
+			}
+			subFields := fields[:fieldCount]
+			fields = fields[fieldCount:]
+			data, bounds := rnnBoundedSample(subFields)
+			res.samples = append(res.samples, data)
+			res.endFlags = append(res.endFlags, bounds)
 		}
 	})
 	if err != nil {
@@ -205,8 +214,7 @@ func (r *rnnBatchLearner) Parameters() []*autofunc.Variable {
 	return r.Params
 }
 
-func rnnBoundedSample(data string) (sample []byte, bounds []bool) {
-	fields := strings.Fields(data)
+func rnnBoundedSample(fields []string) (sample []byte, bounds []bool) {
 	for _, field := range fields {
 		byteField := []byte(field)
 		for i, x := range byteField {
