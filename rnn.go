@@ -12,6 +12,7 @@ import (
 	"github.com/unixpickle/sgd"
 	"github.com/unixpickle/weakai/neuralnet"
 	"github.com/unixpickle/weakai/rnn"
+	"github.com/unixpickle/weakai/rnn/seqtoseq"
 )
 
 const (
@@ -55,20 +56,17 @@ func TrainRNN(corpusDir string) (*RNN, error) {
 
 	log.Printf("Training on %d samples (Ctrl+C to end)...", samples.Len())
 	cost := neuralnet.SigmoidCECost{}
-	batchLearner := &rnnBatchLearner{
-		&rnn.SeqFuncFunc{S: res.Net, InSize: rnnFeatureCount},
-		res.Net.Parameters(),
-	}
 	grad := &sgd.Adam{
-		Gradienter: &neuralnet.BatchRGradienter{
-			Learner:  batchLearner,
+		Gradienter: &seqtoseq.SeqFuncGradienter{
+			Learner:  res.Net,
+			SeqFunc:  res.Net,
 			CostFunc: cost,
 		},
 	}
 
 	var epoch int
 	sgd.SGDInteractive(grad, samples, rnnStepSize, rnnBatchSize, func() bool {
-		tc := neuralnet.TotalCost(cost, batchLearner, samples)
+		tc := seqtoseq.TotalCostSeqFunc(res.Net, 20, samples, cost)
 		log.Printf("Epoch %d: cost=%f", epoch, tc)
 		epoch++
 		return true
@@ -174,14 +172,18 @@ func (r *rnnSampleSet) Swap(i, j int) {
 
 func (r *rnnSampleSet) GetSample(idx int) interface{} {
 	data := r.samples[idx]
-	res := neuralnet.VectorSample{
-		Input:  make(linalg.Vector, len(data)*rnnFeatureCount),
-		Output: make(linalg.Vector, len(data)),
+	res := seqtoseq.Sample{
+		Inputs:  make([]linalg.Vector, len(data)),
+		Outputs: make([]linalg.Vector, len(data)),
 	}
 	for i, b := range data {
-		res.Input[i*rnnFeatureCount+int(b)] = 1
+		inVec := make(linalg.Vector, rnnFeatureCount)
+		inVec[int(b)] = 1
+		res.Inputs[i] = inVec
 		if r.endFlags[idx][i] {
-			res.Output[i] = 1
+			res.Outputs[i] = []float64{1}
+		} else {
+			res.Outputs[i] = []float64{0}
 		}
 	}
 	return res
