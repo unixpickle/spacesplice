@@ -126,8 +126,8 @@ func createRNN() *rnn.Bidirectional {
 	}
 	outNet.Randomize()
 	return &rnn.Bidirectional{
-		Forward:  &rnn.RNNSeqFunc{Block: rnn.NewGRU(rnnFeatureCount, rnnStateSize)},
-		Backward: &rnn.RNNSeqFunc{Block: rnn.NewGRU(rnnFeatureCount, rnnStateSize)},
+		Forward:  &rnn.BlockSeqFunc{Block: rnn.NewGRU(rnnFeatureCount, rnnStateSize)},
+		Backward: &rnn.BlockSeqFunc{Block: rnn.NewGRU(rnnFeatureCount, rnnStateSize)},
 		Output:   &rnn.NetworkSeqFunc{Network: outNet},
 	}
 }
